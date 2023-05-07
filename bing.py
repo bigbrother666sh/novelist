@@ -8,8 +8,6 @@ from EdgeGPT import Chatbot, ConversationStyle
 
 
 async def novelist(args: argparse.Namespace) -> None:
-
-    bot = await Chatbot.create(proxy=args.proxy, cookies=args.cookies)
     if args.style == "creative":
         generate_list = {"creative": ConversationStyle.creative}
     elif args.style == "balanced":
@@ -32,19 +30,24 @@ async def novelist(args: argparse.Namespace) -> None:
         f.write(prompt + "\n\n----------------------------------\n")
         for key, conversation_style in generate_list.items():
             f.write(f"style: {key}\n\n")
+            print(f"try style: {key}")
+            bot = await Chatbot.create(proxy=args.proxy, cookies=args.cookies)
             result = await bot.ask(prompt=prompt, conversation_style=conversation_style, wss_link=args.wss_link)
-            print("generate finished. cool down for 5 seconds...")
-            await asyncio.sleep(5)
 
-            if not result:
+            if result:
+                text = result['item']['messages'][1]['text']
+                print(f"generate success: {text}")
+                f.write(f"{text}\n\n")
+            else:
                 print("generate failed, try again...")
+                f.write("failed\n\n")
                 continue
 
-            text = result['item']['messages'][1]['text']
-            print(f"generate success: {text}")
-            f.write(f"{text}\n\n")
+            print("cool down for 5 seconds...")
+            await bot.close()
+            await asyncio.sleep(5)
+
     f.close()
-    await bot.close()
     print("finished.")
 
 
